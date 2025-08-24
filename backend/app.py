@@ -250,9 +250,9 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
     elif processing in ['edit_distance_inner', 'edit_distance_tokens']:
         results = find_intertextualities_of_text(oracc_corpus, text_id, window_size=window_len, stride=stride, mode=mode, benchmark=0.8, ignore_itself=ignore_self, ignore_core_project=ignore_core_project, edit_distance_tolerance=max_total_ed, if_min_tokens_lower_tolerance_to=0)
 
-        if results == 'timeout':
+        if type(results) == str:
             logging.warning(f"Analysis timed out for text ID: {text_id}")
-            results_html = '<p>Analysis timed out. Probably, there were too many queries and possible hits to analyse. Timelimit is set to 20 seconds. For larger queries, douwnload the app from the <a href="https://github.com/valekfrantisek/ORACC-JSON" target="blank">GitHub page</a> of the project and run the analysis on your own device.</p>'
+            results_html = '<p>Analysis timed out. Probably, there were too many queries and possible hits to analyse. Timelimit is set to 60 seconds. For larger queries, douwnload the app from the <a href="https://github.com/valekfrantisek/ORACC-JSON" target="blank">GitHub page</a> of the project and run the analysis on your own device.</p>'
 
             return jsonify({'input_id': input_id, 'data_for_download':  f'results_{input_id}', 'results_html': results_html})
 

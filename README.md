@@ -2,6 +2,10 @@
 This project includes scripts that allow to run intertextuality queries over the [Open Richly Anotated Cuneiform Corpus(ORACC)](https://oracc.museum.upenn.edu/) dataset.
 
 The description is yet to be finised.
+1) Functions to download ORACC JSON data are in [download_ORACC-JSON.ipynb](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/download_ORACC-JSON.ipynb)
+2) Functions to preprocess the corpus are in [process_ORACC_corpus.ipynb](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/process_ORACC_corpus.ipynb). This is a development notebook, therefor a bit of a mess and it will be polished in the future. Some functionalities, namely vectorization are then moved to [embed.py](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/embed.py), because it runs slow and python runs faster than jupyter.
+3) Functionalities for intertextality detection are in [intertextulity_package.py](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/backend/intertextulity_package.py) in the [backend directory](https://github.com/valekfrantisek/CuneiformIntertextuality/tree/main/backend). However, these require preprocessed datased (not uploaded to GitHub due to its size).
+4) The functionalities will be hopefully soon made available in an online app, with user-friendly UI.
 
 In addition, the requirements are not correct and it returns errors at this point --> Either install manually, or wait until I solve this bug.
 

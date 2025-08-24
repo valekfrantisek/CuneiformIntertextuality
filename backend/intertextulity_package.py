@@ -735,7 +735,7 @@ def find_intertextualities_of_text(oracc_corpus:OraccCorpus, text_id:str, window
     Add description
     """
     # NOTE: deadline is set --> this may cause problems, check if that happens!!
-    deadline = (time.monotonic() + 20)
+    deadline = (time.monotonic() + 60)
 
     queries = parse_query_text(oracc_corpus.get_data_by_id(text_id, mode=mode), window_size=window_size, stride=stride)
     print(f'Input text has been parsed to {len(queries)} queries.')
