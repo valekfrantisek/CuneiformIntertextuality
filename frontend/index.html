@@ -1,0 +1,261 @@
+<html>
+    <head>
+        <title>Cuneifrom Intertextuality Analysis</title>
+        <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Poly:ital@0;1&display=swap" rel="stylesheet">
+
+    <script src="script.js"></script>
+
+    </head>
+    <body>
+        <div id="loading" class="loading" hidden aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>
+                <strong id="loading-msg">Analyzing</strong><span id="loading-dots"></span>
+                <div class="submsg">Please wait, do not close the window…</div>
+            </div>
+        </div>
+        <div class="container-header">
+            <h1>Cuneiform Intertextuality Analysis - BETA 0.0.1</h1>
+            <p>This portal provides functions for analyzing cuneiform intertextuality within <a href="http://oracc.ub.uni-muenchen.de/index.html" target="_blank" rel="noopener noreferrer">ORACC corpus</a>.</p>
+        </div>
+        <div class="container">
+            <div class="input-section">
+                <h2>Input section</h2>
+
+                <h3>General settings</h3>
+                <h4>Select the mode of the input.</h4>
+                <!-- TODO: add description!!! -->
+                <div class="button-container" id="mode-buttons">
+                    <div class="mode-group">
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="normalised">
+                            <span>Normalised</span>
+                        </button>
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="lemma">
+                            <span>Lemma</span>
+                        </button>
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="forms">
+                            <span>Forms</span>
+                        </button>
+                    </div>
+                    <div class="mode-group">
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="normalised_pos">
+                            <span>Normalised<br>(POS tagging for NE)</span>
+                        </button>
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="lemma_pos">
+                            <span>Lemma<br>(POS tagging for NE)</span>
+                        </button>
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="forms_pos">
+                            <span>Forms<br>(POS tagging for NE)</span>
+                        </button>
+                    </div>
+                    <div class="mode-group">
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="signs">
+                            <span>Signs</span>
+                        </button>
+                        <button type="radio" class="mode-option" id="modebutton" data-mode="signs_gdl">
+                            <span>Signs (ground)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <h4>Select the type of processing.</h4>
+
+                <div class="button-container" id="mode-buttons">
+                    <div class="mode-group">
+                        <button type="radio" class="processing-option" id="processing-button" data-processing="edit_distance_inner">
+                            <span>Edit distance<br>(chars within tokens)</span>
+                        </button>
+                        <button type="radio" class="processing-option" id="processing-button" data-processing="edit_distance_tokens">
+                            <span>Edit distance<br>(on the level of tokens)</span>
+                        </button>
+                    </div>
+                    <div class="mode-group">
+                        <button type="radio" class="processing-option" id="processing-button" data-processing="vect_e5">
+                            <span>Vector comparison<br>(model: intfloat/e5-base-v2)</span>
+                        </button>
+                        <button type="radio" class="processing-option" id="processing-button" data-processing="vect_MiniLM">
+                            <span>Vector comparison<br>(model: all-MiniLM-L6-v2)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="number-group">
+                    <label for="ed_distance">Edit distance tolerance (relevant for edit distance processings):</label>
+                    <input type="number"
+                            class="number-input";
+                            id="ed_distance"
+                            name="ed_distance"
+                            min="0" max="100" step="1" value="4" inputmode="numeric">
+                </div>
+
+                <label>normalize Signs (e.g., ša=ša₂=ša₃) (relevant for modes 'signs', 'forms', and 'forms POS') <input type="checkbox" id="normalize-signs"></label>
+                
+                <h3>1) Search intertextualities of input text</h3>
+                <form method="POST" id="input-form">
+                    <input type="text" id="input-text" name="input-text" placeholder="Enter your text here..."></input>
+                </form>
+
+                <p id="input-text-example">You may generate an example on input text according to the selected mode (first 15 tokens of a selected text by ORACC ID)</p>
+                <div class="example-generation">
+                    <form method="POST" id="input-form-example">
+                        <input type="text" id="example-text-id" name="example-text-id" placeholder="Enter text ID (e.g. nere/Q009326)"></input>
+                    </form>
+                    <button class="generate-button" id="generate-example-button">
+                        Generate Example
+                    </button>
+                    <button class="generate-button" id="show-full-text-button">
+                        Show full text
+                    </button>
+                </div>
+
+                <h4>Special characters</h4>
+                <div class="char-buttons">
+                    <button type="button" data-char="Ṯ">Ṯ</button>
+                    <button type="button" data-char="ṯ">ṯ</button>
+                    <button type="button" data-char="Ṭ">Ṭ</button>
+                    <button type="button" data-char="ṭ">ṭ</button>
+                    <button type="button" data-char="Ṣ">Ṣ</button>
+                    <button type="button" data-char="ṣ">ṣ</button>
+                    <button type="button" data-char="Ḏ">Ḏ</button>
+                    <button type="button" data-char="ḏ">ḏ</button>
+                    <button type="button" data-char="Ḫ">Ḫ</button>
+                    <button type="button" data-char="ḫ">ḫ</button>
+                    <button type="button" data-char="Ḥ">Ḥ</button>
+                    <button type="button" data-char="ḥ">ḥ</button>
+                </div>
+                <div class="char-buttons">
+                    <button type="button" data-char="Ā">Ā</button>
+                    <button type="button" data-char="ā">ā</button>
+                    <button type="button" data-char="Ē">Ē</button>
+                    <button type="button" data-char="ē">ē</button>
+                    <button type="button" data-char="Ī">Ī</button>
+                    <button type="button" data-char="ī">ī</button>
+                    <button type="button" data-char="Ū">Ū</button>
+                    <button type="button" data-char="ū">ū</button>
+                    <button type="button" data-char="Â">Â</button>
+                    <button type="button" data-char="â">â</button>
+                    <button type="button" data-char="Ê">Ê</button>
+                    <button type="button" data-char="ê">ê</button>
+                    <button type="button" data-char="Î">Î</button>
+                    <button type="button" data-char="î">î</button>
+                    <button type="button" data-char="Û">Û</button>
+                    <button type="button" data-char="û">û</button>
+                    <button type="button" data-char="ʾ">ʾaleph</button>
+                </div>
+
+                <h4>Subscript numbers (use for sign numbers)</h4>
+                
+                <div class="char-buttons">
+                    <button type="button" data-char="₁">1</button>
+                    <button type="button" data-char="₂">2</button>
+                    <button type="button" data-char="₃">3</button>
+                    <button type="button" data-char="₄">4</button>
+                    <button type="button" data-char="₅">5</button>
+                    <button type="button" data-char="₆">6</button>
+                    <button type="button" data-char="₇">7</button>
+                    <button type="button" data-char="₈">8</button>
+                    <button type="button" data-char="₉">9</button>
+                    <button type="button" data-char="₀">0</button>
+                </div>
+
+                <div class="button-container-analysis" id="analyse-buttons">              
+                    <button id="analyze" type="button" class="custom-button">
+                        <span>Search for intertextualities in ORACC</span>
+                    </button>
+                </div>
+
+                <h3>2) Find intertextualities of a text from ORACC within the ORACC corpus</h3>
+
+                <form method="POST">
+                    <div class="combo" id="project-combo" aria-haspopup="listbox">
+                        <input type="text" id="combo-input" autocomplete="off" placeholder="Select ORACC project…" role="combobox" aria-expanded="false" aria-controls="combo-list" aria-autocomplete="list">
+                        <ul id="combo-list" class="combo-list" role="listbox"></ul>
+                    </div>
+
+                    <!-- sem se uloží vybraný projekt pro backend -->
+                    <input type="hidden" name="project" id="selected-value">
+
+                    <!-- Závislý výběr TEXTU v rámci zvoleného projektu -->
+                    <div class="combo" id="text-combo" aria-haspopup="listbox">
+                        <input type="text" id="text-combo-input" autocomplete="off" placeholder="Select text… (first, select a project)" disabled
+                                role="combobox" aria-expanded="false" aria-controls="text-combo-list" aria-autocomplete="list">
+                        <ul id="text-combo-list" class="combo-list" role="listbox"></ul>
+                    </div>
+
+                    <input type="hidden" name="text" id="text-selected-value">
+
+                    <ul class="check-lists">
+                        <li>Ignore selected text itself (inner intertextuality) <input type="checkbox" id="ignore-self"></li>
+                        <li>Ignore texts from the same ORACC project (including self) <input type="checkbox" id="ignore-core-project"></li>
+                    </ul>
+
+                    <h4>Parsing options</h4>
+
+                    <div class="number-group">
+                        <label for="window-length">Window length:</label>
+                        <input type="number"
+                                class="number-input"
+                                id="window-length"
+                                name="window_length"
+                                min="1" step="1" value="10" inputmode="numeric">
+                    </div>
+
+                    <div class="number-group">
+                        <label for="stride">Stride:</label>
+                        <input type="number"
+                                class="number-input"
+                                id="stride"
+                                name="stride"
+                                min="1" step="1" value="5" inputmode="numeric">
+                    </div>
+
+                    <div class="button-container-analysis" id="analyse-buttons">              
+                        <button id="analyze-by-id" type="button" class="custom-button">
+                            <span>Search for intertextualities in ORACC</span>
+                        </button>
+                    </div>
+
+                </form>
+
+                
+
+            </div>
+            
+            <div class="output-section">
+                <h2>Analysis section</h2>
+                <h3>Error report</h3>
+                <div id="error-output" class="error-output">If errors are encountered, they will be listed here.</div>
+                <h3>Download outputs</h3>
+                <div class="button-container" id="download-buttons">              
+                    <button id="download-button-csv" type="button" class="custom-button">
+                        <span>Download CSV</span>
+                    </button>
+                    <button id="download-button-xlsx" type="button" class="custom-button">
+                        <span>Download XLSX</span>
+                    </button>
+                </div>
+                <h3>Analysis results</h3>
+                <div id="basic-output">Analysis results will appear here...</div>
+            </div>
+        </div>
+
+        <div class="work-in-progress">
+            <h2>Work in progress</h2>
+        </div>
+
+        <div class="container-footer">
+            <div class="footer-content">
+                <span class="footer-left">license (script): <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank">CC0 1.0 Universal</a><br>license (ORACC data): <a href="http://oracc.ub.uni-muenchen.de/doc/about/licensing/index.html" target="_blank">CC BY-SA 3.0</a></span>
+                <span class="footer-center">contact: <a href="mailto:frantisek.valek@upce.cz">frantisek.valek@upce.cz</a></span>
+                <span class="footer-right">
+                    <a href="https://github.com/valekfrantisek/">
+                        <!-- TODO: Add the correct GitHub link -->
+                        <img src="images/GitHub_logo.png" alt="Project on github" height="60px">
+                    </a>
+                </span>
+            </div>
+        </div>
+    </body>
+</html>
