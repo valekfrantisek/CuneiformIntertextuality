@@ -1,6 +1,10 @@
 # ORACC Intertextuality
 This project includes scripts that allow to run intertextuality queries over the [Open Richly Anotated Cuneiform Corpus(ORACC)](https://oracc.museum.upenn.edu/) dataset.
 
+The description is yet to be finised.
+
+In addition, the requirements are not correct and it returns errors at this point --> Either install manually, or wait until I solve this bug.
+
 ## Structure
 
 ## Modes
