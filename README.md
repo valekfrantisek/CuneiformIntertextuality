@@ -2,6 +2,9 @@
 This project includes scripts that allow to run intertextuality queries over the [Open Richly Anotated Cuneiform Corpus(ORACC)](https://oracc.museum.upenn.edu/) dataset.
 
 ## How to use
+The Cuneiform Intertextuality detection is intended to run as an accessible web application. So far, it is not being run anywhere, but hopefully this will happen soon.
+
+## How to use - locally
 ### Requirements
 Python packages
 - Install requirements from the [requirements.txt](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/requirements.txt).
