@@ -296,22 +296,22 @@ def save_individual_project_jsons(prefix:str='prnd_no_comp_', prune=True, compre
     save_json_corpus(projects_texts_with_errors, f'{prefix}texts_with_errors_for_individual_files', compression=compression)
 
 if __name__ == '__main__':
-    # print('Running initial setup...')
+    print('Running initial setup...')
     
-    # print('Creating folder structure...')
-    # create_structure()
+    print('Creating folder structure...')
+    create_structure()
 
-    # print('Getting existing projects...')
-    # get_existing_projects()
+    print('Getting existing projects...')
+    get_existing_projects()
 
-    # print('Downloading json zip files...')
-    # download_jsons()
+    print('Downloading json zip files...')
+    download_jsons()
 
-    # print('Extracting and deleting zip files...')
-    # extract_and_delete_zip()
+    print('Extracting and deleting zip files...')
+    extract_and_delete_zip()
 
-    # print('Creating frontend data structure...')
-    # create_texts_map_for_frontend()
+    print('Creating frontend data structure...')
+    create_texts_map_for_frontend()
 
     print('Creating pruned JSONs for individual projects...')
     save_individual_project_jsons()
