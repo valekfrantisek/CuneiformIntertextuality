@@ -745,14 +745,25 @@ def skip_empty_query(query: List[str], stop: Set[str], min_tokens: int=2) -> boo
 
 def parse_query_text(query:List[str], window_size:int=5, stride:int=3) -> List[str]:
     """
-    Parse the input query (list of strings) into strided queries of a specified size.
+    Parse the input query (list of strings) into strided queries of a specified size. If the window size is shorter than the query, the full query is returned. If the last window overlaps the query, the last window is calculated from the back.
     """
-    queries = []
-    for i in range(0, len(query) - window_size + 1, stride):
-        window = query[i:i + window_size]
-        queries.append(window)
-    
-    return queries
+    if window_size <= 0 or stride <= 0:
+        raise ValueError('window_size and stride must be positive integers.')
+    n = len(query)
+    if n == 0:
+        return []
+    if n <= window_size:
+        return [query[:]] # short query --> one window
+
+    # standard starts by stride
+    starts = list(range(0, n - window_size + 1, stride))
+
+    # adding the last window if not present (standard window over the limit)
+    last_start = n - window_size
+    if not starts or starts[-1] != last_start:
+        starts.append(last_start)
+
+    return [query[s:s + window_size] for s in starts]
 
 
 def get_core_project(text_id: str) -> str:
