@@ -548,6 +548,35 @@ def build_inverted_index(docs: Iterable[Doc], external_ids: Optional[Iterable[An
                        ids2ext=ext_ids, ext2ids=ext2int)
 
 
+def set_correct_benchmark(query: list, max_total_ed: int, mode: str) -> float:
+    """ Set the correct benchmark for selection of possible documents based on the query based on its length and the max_total_ed. """
+    benchmark = 1.0
+    if max_total_ed > 0:
+        if mode == 'edit_distance_inner':
+            sorted_q = sorted(query, key=len)
+            num_of_tokens = 0
+            tokens_len = 0
+            for token in sorted_q:
+                num_of_tokens += 1
+                tokens_len += len(token)
+                if tokens_len > max_total_ed:
+                    break
+            
+            print((num_of_tokens / len(query)))
+            benchmark = ceil((num_of_tokens / len(query)) * 10) / 10
+
+        elif mode == 'edit_distance_tokens':
+            print((max_total_ed / len(query)))
+            benchmark = ceil((max_total_ed / len(query)) * 10) / 10
+
+    benchmark = 1-benchmark
+
+    if benchmark == 0.0:
+        benchmark = 0.1
+
+    return benchmark
+
+
 def select_documents_for_single_token(index: SimpleIndex, term: str) -> List[int]:
     """ Selects documents containing the given token. """
     return index.postings.get(term, [])
@@ -627,7 +656,7 @@ def load_data_by_mode(mode:str, oracc_corpus: OraccCorpus):
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
-def search_for_query_in_target_dataset(mode: str, processing:str, query: List[str], ORACCtarget_dataset: OraccCorpus, benchmark: float = 0.8, max_total_ed: int = 5, target_inverted_idx=None, stop=None, ignore_texts=None) -> pd.DataFrame:
+def search_for_query_in_target_dataset(mode: str, processing:str, query: List[str], ORACCtarget_dataset: OraccCorpus, max_total_ed: int = 5, target_inverted_idx=None, stop=None, ignore_texts=None) -> pd.DataFrame:
     """
     Searches for a query in the target dataset and looks for intertextuality within it. 
     1) Returns a set of document IDs that match the query, 
@@ -637,9 +666,10 @@ def search_for_query_in_target_dataset(mode: str, processing:str, query: List[st
     :param processing: The processing type indicating on which level the edit distance is applied ('inner', 'token')
     :param query: The query terms to search for
     :param ORACCtarget_dataset: The target dataset to search within (must be OraccCorpus class)
-    :param benchmark: The benchmark proportion of tokens that must match
     :return: pandas dataframe of results
     """
+
+    benchmark = set_correct_benchmark(query=query, max_total_ed=max_total_ed, mode=processing)
 
     if not target_inverted_idx or not stop:
         target_inverted_idx, stop = load_data_by_mode(mode, ORACCtarget_dataset)
@@ -730,7 +760,7 @@ def get_core_project(text_id: str) -> str:
     return '/'.join(parts[:len(parts)-1])
 
 
-def find_intertextualities_of_text(oracc_corpus:OraccCorpus, text_id:str, window_size:int=5, stride:int=3, mode:str='normalised', processing: str='edit_distance_inner', benchmark:float=0.8, ignore_itself=True, ignore_core_project=False, edit_distance_tolerance=5, if_min_tokens_lower_tolerance_to=0, min_tokens: int=2) -> pd.DataFrame:
+def find_intertextualities_of_text(oracc_corpus:OraccCorpus, text_id:str, window_size:int=5, stride:int=3, mode:str='normalised', processing: str='edit_distance_inner', ignore_itself=True, ignore_core_project=False, edit_distance_tolerance=5, if_min_tokens_lower_tolerance_to=0, min_tokens: int=2) -> pd.DataFrame:
     """
     Add description
     """
@@ -772,7 +802,7 @@ def find_intertextualities_of_text(oracc_corpus:OraccCorpus, text_id:str, window
         else:
             ed_tolerance = edit_distance_tolerance
 
-        q_hits = search_for_query_in_target_dataset(mode=mode, processing=processing, query=query, ORACCtarget_dataset=oracc_corpus, benchmark=benchmark, max_total_ed=ed_tolerance, target_inverted_idx=target_inverted_idx, stop=stop, ignore_texts=ignore_texts)
+        q_hits = search_for_query_in_target_dataset(mode=mode, processing=processing, query=query, ORACCtarget_dataset=oracc_corpus, max_total_ed=ed_tolerance, target_inverted_idx=target_inverted_idx, stop=stop, ignore_texts=ignore_texts)
 
         q_hits['query'] = ' '.join(query)
 

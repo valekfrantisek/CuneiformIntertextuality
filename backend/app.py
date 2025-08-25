@@ -62,34 +62,6 @@ def serve_frontend():
 
 """ Working with corpus ---------------------------------- """
 
-def set_correct_benchmark(query: list, max_total_ed: int, mode: str) -> float:
-    """ Set the correct benchmark for selection of possible documents based on the query based on its length and the max_total_ed. """
-    benchmark = 1.0
-    if max_total_ed > 0:
-        if mode == 'edit_distance_inner':
-            sorted_q = sorted(query, key=len)
-            num_of_tokens = 0
-            tokens_len = 0
-            for token in sorted_q:
-                num_of_tokens += 1
-                tokens_len += len(token)
-                if tokens_len > max_total_ed:
-                    break
-            
-            print((num_of_tokens / len(query)))
-            benchmark = math.ceil((num_of_tokens / len(query)) * 10) / 10
-
-        elif mode == 'edit_distance_tokens':
-            print((max_total_ed / len(query)))
-            benchmark = math.ceil((max_total_ed / len(query)) * 10) / 10
-
-    benchmark = 1-benchmark
-
-    if benchmark == 0.0:
-        benchmark = 0.1
-
-    return benchmark
-
 
 @app.route('/get_text_example/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
 def get_text_example(text_id, mode, normalise_signs):
@@ -186,10 +158,7 @@ def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
     elif processing in ['edit_distance_inner', 'edit_distance_tokens']:
         query = query.split()
 
-        benchmark = set_correct_benchmark(query, max_total_ed, mode=processing)
-        print(f'Benchmark was document selection was set to: {benchmark}')
-
-        results = search_for_query_in_target_dataset(mode=mode, processing=processing, query=query, ORACCtarget_dataset=oracc_corpus, max_total_ed=max_total_ed, benchmark=benchmark)
+        results = search_for_query_in_target_dataset(mode=mode, processing=processing, query=query, ORACCtarget_dataset=oracc_corpus, max_total_ed=max_total_ed)
 
         print(f'Analysis results ({len(results)}):')
         print(results.head(10))
@@ -248,7 +217,9 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
         # logging.debug(f"Processed data saved to cache with key: results_{input_id}")
 
     elif processing in ['edit_distance_inner', 'edit_distance_tokens']:
-        results = find_intertextualities_of_text(oracc_corpus, text_id, window_size=window_len, stride=stride, mode=mode, benchmark=0.8, ignore_itself=ignore_self, ignore_core_project=ignore_core_project, edit_distance_tolerance=max_total_ed, if_min_tokens_lower_tolerance_to=0)
+        # TODO: implement calculation of benchmark based on edit distance!!
+
+        results = find_intertextualities_of_text(oracc_corpus, text_id, window_size=window_len, stride=stride, mode=mode, ignore_itself=ignore_self, ignore_core_project=ignore_core_project, edit_distance_tolerance=max_total_ed, if_min_tokens_lower_tolerance_to=0)
 
         if type(results) == str:
             logging.warning(f"Analysis timed out for text ID: {text_id}")
