@@ -965,7 +965,6 @@ FAISS_SIGNS_NORMALISED_PATH_MiniLM = os.path.join(CHUNKS_PATH, "oracc_signs_norm
 FAISS_SIGNSGDL_PATH_MiniLM = os.path.join(CHUNKS_PATH, "oracc_signs_gdl_miniLM.faiss")
 
 def select_paths(mode:str, model:str):
-    # TODO: paths may be filtered, as many of them are actually not in use (but it would then be needed to change idxs of select_paths)
     if mode == 'normalised':
         if model == 'vect_e5':
             return (ORACC_NORM_embed_csv_PATH, EMBS_NORM_PATH_E5, IDS_NORM_PATH, FAISS_NORM_PATH_E5, 'intfloat/e5-base-v2', ORACC_NORM_meta_csv_PATH)

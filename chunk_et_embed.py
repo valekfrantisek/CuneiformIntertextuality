@@ -9,9 +9,11 @@ import faiss
 from typing import List, Tuple, Dict, Any
 import csv
 from time import time
+from backend.intertextulity_package import OraccCorpus, select_paths
 
 
 ROOT_PATH = os.getcwd()
+CORPUS_PATH = os.path.join(ROOT_PATH, 'CORPUS')
 CHUNKS_PATH = os.path.join(ROOT_PATH, "chunks")
 
 ORACC_NORM_embed_csv_PATH = os.path.join(CHUNKS_PATH, "oracc_norm_embeddings.csv")
@@ -108,6 +110,155 @@ FAISS_SIGNS_NORMALISED_PATH_MiniLM = os.path.join(CHUNKS_PATH, "oracc_signs_norm
 FAISS_SIGNSGDL_PATH_MiniLM = os.path.join(CHUNKS_PATH, "oracc_signs_gdl_miniLM.faiss")
 
 
+""" Chunking functions. ----------------------------------------------------- """
+
+
+def make_windows(seq: List[str], window: int, stride: int, drop_last: bool=False) -> List[Tuple[int,int,List[str]]]:
+    """
+    Creates a list of strideping windows from the input sequence.
+
+    :param seq: Input sequence (list of tokens/characters)
+    :param window: Size of the window
+    :param stride: Stride (step size) for moving the window
+    :param drop_last: Whether to drop the last window if it's smaller than the specified size
+    :return: List of tuples (start_idx, end_idx, subseq)
+    """
+    n = len(seq)
+    out = []
+    if n == 0 or window <= 0 or stride <= 0:
+        return out
+
+    i = 0
+    while i < n:
+        j = i + window
+        if j > n:
+            if drop_last:
+                break
+            j = n
+        out.append((i, j, seq[i:j]))
+        if j == n:
+            break
+        i += stride
+    return out
+
+
+def chunkORACCtext(input_orrac_corpus: OraccCorpus, oracc_text_ID:str, mode: str='normalised', chunk_size: int=10, stride: int=5, drop_last: bool=False, unknown_policy: str='compress', skip_all_unknown: bool=True) -> List[Dict[str, Any]]:
+    """ Parsing ORACC to chunks. 
+
+    :param input_orrac_corpus: The ORACC corpus object
+    :param oracc_text_ID: The ID of the ORACC text to process
+    :param mode: The mode for text retrieval (e.g., 'normalised')
+    :param chunk_size: The size of each chunk
+    :param stride: The stride between chunks
+    :param drop_last: Whether to drop the last chunk if it's smaller than chunk_size
+    :param unknown_policy: Whether to drop unknown words (select 'compress'|'keep')
+    :param skip_all_unknown: Whether to skip chunks that are entirely unknown
+    :return: A tuple containing a list of chunks as tuples (start_idx, end_idx, subseq)
+    """
+
+    oraccText = input_orrac_corpus.get_data_by_id(oracc_text_ID, mode=mode)
+
+    windows = make_windows(oraccText, window=chunk_size, stride=stride, drop_last=drop_last)
+
+    out = []
+    for s, e, subseq_raw in windows:
+        # DISPLAY data
+        text_display = ' '.join(list(subseq_raw))
+
+        # EMBEDDING data (UKNOWN handling)
+        if unknown_policy == 'compress':
+            emb_tokens = [t for t in subseq_raw if t != '∎']
+        elif unknown_policy == 'keep':
+            emb_tokens = list(subseq_raw)
+        else:
+            raise ValueError("unknown_policy must be 'compress'|'keep'")
+
+        text_embed = ' '.join(emb_tokens).strip()
+        if skip_all_unknown and text_embed == '' or text_embed == '∎':
+            continue
+
+        out.append({
+            'start': s,
+            'end': e,
+            'text_display': text_display,
+            'text_embed': text_embed,
+        })
+    return out
+
+
+def export_corpus_to_csv(corpus: OraccCorpus, out_embed_csv: str, out_meta_csv: str, mode: str, chunk_size: int = 10, stride: int = 5, drop_last: bool = False, unknown_policy: str='compress', skip_all_unknown: bool=True):
+
+    if mode=='normalised':
+        unit_tag='n'
+    elif mode=='forms':
+        unit_tag='f'
+    elif mode=='forms_normalised':
+        unit_tag='fn'
+    elif mode=='lemma':
+        unit_tag='l'
+    elif mode=='forms_pos':
+        unit_tag='fp'
+    elif mode=='forms_pos_normalised':
+        unit_tag='fpn'
+    elif mode=='lemma_pos':
+        unit_tag='lp'
+    elif mode=='normalised_pos':
+        unit_tag='np'
+    elif mode=='signs':
+        unit_tag='s'
+    elif mode=='signs_normalised':
+        unit_tag='sn'
+    elif mode=='signs_gdl':
+        unit_tag='sg'
+    else:
+        raise ValueError(f"Unknown mode: {mode}. Use 'normalised', 'forms', 'lemma', 'normalised_pos', 'forms_pos', 'lemma_pos', 'signs', 'signs_gdl', 'forms_normalised', 'forms_POS_normalised', 'signs_normalised'.")
+
+    with open(out_embed_csv, "w", newline="", encoding="utf-8") as fe, \
+         open(out_meta_csv,  "w", newline="", encoding="utf-8") as fm:
+        we = csv.writer(fe)
+        wm = csv.writer(fm)
+        we.writerow(["chunk_id", "text"])
+        wm.writerow(["chunk_id", "text_id", "start", "end", "text_display"])
+
+    total_embed = 0
+    total_meta = 0
+
+    # Streaming text chunks
+    for textID in tqdm(corpus.texts, desc='Processing ORACC texts'):
+        recs = chunkORACCtext(
+            input_orrac_corpus=corpus,
+            oracc_text_ID=textID,
+            mode=mode,
+            chunk_size=chunk_size,
+            stride=stride,
+            drop_last=drop_last,
+            unknown_policy=unknown_policy, 
+            skip_all_unknown=skip_all_unknown
+        )
+
+        with open(out_embed_csv, 'a', newline='', encoding='utf-8') as fe, \
+             open(out_meta_csv,  'a', newline='', encoding='utf-8') as fm:
+            we = csv.writer(fe)
+            wm = csv.writer(fm)
+
+            for r in recs:
+                chunk_id = f"{textID}:{unit_tag}:{r['start']}-{r['end']}"
+
+                # meta zapisujeme vždy (aby šlo v UI projít vše, i když embed není)
+                wm.writerow([chunk_id, textID, r['start'], r['end'], r['text_display']])
+                total_meta += 1
+
+                # do embedding CSV jen neprázdné texty (tvoje logika už ∎ vyhodila)
+                if r['text_embed']:
+                    we.writerow([chunk_id, r['text_embed']])
+                    total_embed += 1
+
+    print(f'Saved → {out_embed_csv}: {total_embed} rows')
+    print(f'Saved → {out_meta_csv}:  {total_meta} rows')
+
+
+""" Embedding functions. ---------------------------------------------------- """
+
 def batched(iterable, n):
     for i in range(0, len(iterable), n):
         yield iterable[i:i+n]
@@ -176,68 +327,68 @@ def process_chunks_POS(input_csv_path:str, output_embeddings_path:str, output_id
     print("Processing time:", end_ - start_)
 
     print("Uloženo:", output_embeddings_path, E.shape, " / ", output_ids_path, len(ids))
+    
 
-def select_paths(mode='normalised', model='e5'):
-    if mode == 'normalised':
-        if model == 'e5':
-            return (ORACC_NORM_embed_csv_PATH, EMBS_NORM_PATH_E5, IDS_NORM_PATH, FAISS_NORM_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_NORM_embed_csv_PATH, EMBS_NORM_PATH_MiniLM, IDS_NORM_PATH, FAISS_NORM_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'normalised_POS':
-        if model == 'e5':
-            return (ORACC_NORM_POS_embed_csv_PATH, EMBS_NORM_POS_PATH_E5, IDS_NORM_POS_PATH, FAISS_NORM_POS_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_NORM_POS_embed_csv_PATH, EMBS_NORM_POS_PATH_MiniLM, IDS_NORM_POS_PATH, FAISS_NORM_POS_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'lemma':
-        if model == 'e5':
-            return (ORACC_LEMMA_embed_csv_PATH, EMBS_LEMMA_PATH_E5, IDS_LEMMA_PATH, FAISS_LEMMA_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_LEMMA_embed_csv_PATH, EMBS_LEMMA_PATH_MiniLM, IDS_LEMMA_PATH, FAISS_LEMMA_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'lemma_POS':
-        if model == 'e5':
-            return (ORACC_LEMMA_POS_embed_csv_PATH, EMBS_LEMMA_POS_PATH_E5, IDS_LEMMA_POS_PATH, FAISS_LEMMA_POS_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_LEMMA_POS_embed_csv_PATH, EMBS_LEMMA_POS_PATH_MiniLM, IDS_LEMMA_POS_PATH, FAISS_LEMMA_POS_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'forms':
-        if model == 'e5':
-            return (ORACC_FORMS_embed_csv_PATH, EMBS_FORMS_PATH_E5, IDS_FORMS_PATH, FAISS_FORMS_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_FORMS_embed_csv_PATH, EMBS_FORMS_PATH_MiniLM, IDS_FORMS_PATH, FAISS_FORMS_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'forms_POS':
-        if model == 'e5':
-            return (ORACC_FORMS_POS_embed_csv_PATH, EMBS_FORMS_POS_PATH_E5, IDS_FORMS_POS_PATH, FAISS_FORMS_POS_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_FORMS_POS_embed_csv_PATH, EMBS_FORMS_POS_PATH_MiniLM, IDS_FORMS_POS_PATH, FAISS_FORMS_POS_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'forms_normalised':
-        if model == 'e5':
-            return (ORACC_FORMS_NORMALISED_embed_csv_PATH, EMBS_FORMS_NORMALISED_PATH_E5, IDS_FORMS_NORMALISED_PATH, FAISS_FORMS_NORMALISED_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_FORMS_NORMALISED_embed_csv_PATH, EMBS_FORMS_NORMALISED_PATH_MiniLM, IDS_FORMS_NORMALISED_PATH, FAISS_FORMS_NORMALISED_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'forms_POS_normalised':
-        if model == 'e5':
-            return (ORACC_FORMS_POS_NORMALISED_embed_csv_PATH, EMBS_FORMS_POS_NORMALISED_PATH_E5, IDS_FORMS_POS_NORMALISED_PATH, FAISS_FORMS_POS_NORMALISED_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_FORMS_POS_NORMALISED_embed_csv_PATH, EMBS_FORMS_POS_NORMALISED_PATH_MiniLM, IDS_FORMS_POS_NORMALISED_PATH, FAISS_FORMS_POS_NORMALISED_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'signs':
-        if model == 'e5':
-            return (ORACC_SIGNS_embed_csv_PATH, EMBS_SIGNS_PATH_E5, IDS_SIGNS_PATH, FAISS_SIGNS_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_SIGNS_embed_csv_PATH, EMBS_SIGNS_PATH_MiniLM, IDS_SIGNS_PATH, FAISS_SIGNS_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'signs_normalised':
-        if model == 'e5':
-            return (ORACC_SIGNS_NORMALISED_embed_csv_PATH, EMBS_SIGNS_NORMALISED_PATH_E5, IDS_SIGNS_NORMALISED_PATH, FAISS_SIGNS_NORMALISED_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_SIGNS_NORMALISED_embed_csv_PATH, EMBS_SIGNS_NORMALISED_PATH_MiniLM, IDS_SIGNS_NORMALISED_PATH, FAISS_SIGNS_NORMALISED_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    elif mode == 'signs_gdl':
-        if model == 'e5':
-            return (ORACC_SIGNSGDL_embed_csv_PATH, EMBS_SIGNSGDL_PATH_E5, IDS_SIGNSGDL_PATH, FAISS_SIGNSGDL_PATH_E5, 'intfloat/e5-base-v2')
-        elif model == 'MiniLM':
-            return (ORACC_SIGNSGDL_embed_csv_PATH, EMBS_SIGNSGDL_PATH_MiniLM, IDS_SIGNSGDL_PATH, FAISS_SIGNSGDL_PATH_MiniLM, 'all-MiniLM-L6-v2')
-    else:
-        raise ValueError("Unknown mode: " + mode)
+""" Creating FAISS index ---------------------------------------------------- """
+
+
+def make_FAISS(input_embeddings_path:str, output_faiss_path:str, nlist:int=1024):
+
+    MIN_NLIST, MAX_NLIST = 256, 32768
+    TRAIN_MULTIPLIER = 128
+
+    print('\tLoading embeddings...')
+    E = np.load(input_embeddings_path).astype('float32')
+    N, d = E.shape
+    print(f'\tVectors: {N}, dim: {d}')
+
+    nlist = int(4 * (N ** 0.5))
+    nlist = max(MIN_NLIST, min(nlist, MAX_NLIST))
+    print(f'\tnlist = {nlist}')
+
+    quantizer = faiss.IndexFlatIP(d)
+    index = faiss.IndexIVFFlat(quantizer, d, nlist, faiss.METRIC_INNER_PRODUCT)
+
+    train_size = min(N, nlist * TRAIN_MULTIPLIER)
+    print(f'\tTrain size: {train_size}')
+    rng = np.random.default_rng(42)
+    train_idx = rng.choice(N, size=train_size, replace=False)
+    train_vecs = E[train_idx]
+
+    print('\tTraining IVF...')
+    index.train(train_vecs)
+    assert index.is_trained
+
+    print('\tAdding vectors to index...')
+    index.add(E)   # lze i po dávkách, ale add() si data zkopíruje
+
+    faiss.write_index(index, output_faiss_path)
+    print(f'DONE. Index saved: {output_faiss_path}  |  ntotal={index.ntotal}')
+
 
 if __name__ == "__main__":
-    for mode in ['forms', 'forms_POS', 'signs', 'signs_gdl', 'forms_POS_normalised', 'signs_normalised', 'forms_normalised']: # ['forms_POS', 'normalised_POS', 'lemma_POS', 'forms', 'lemma', 'normalised', 'signs', 'signs_gdl']
+
+    oracc_corpus = oracc_corpus = OraccCorpus(projects_path=CORPUS_PATH, files_prefix='prnd_no_comp')
+    
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_NORM_embed_csv_PATH, out_meta_csv=ORACC_NORM_meta_csv_PATH, mode='normalised')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_LEMMA_embed_csv_PATH, out_meta_csv=ORACC_LEMMA_meta_csv_PATH, mode='lemma')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_FORMS_embed_csv_PATH, out_meta_csv=ORACC_FORMS_meta_csv_PATH, mode='forms')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_FORMS_NORMALISED_embed_csv_PATH, out_meta_csv=ORACC_FORMS_NORMALISED_meta_csv_PATH, mode='forms_normalised')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_NORM_POS_embed_csv_PATH, out_meta_csv=ORACC_NORM_POS_meta_csv_PATH, mode='normalised_pos')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_LEMMA_POS_embed_csv_PATH, out_meta_csv=ORACC_LEMMA_POS_meta_csv_PATH, mode='lemma_pos')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_FORMS_POS_embed_csv_PATH, out_meta_csv=ORACC_FORMS_POS_meta_csv_PATH, mode='forms_pos')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_FORMS_POS_NORMALISED_embed_csv_PATH, out_meta_csv=ORACC_FORMS_POS_NORMALISED_meta_csv_PATH, mode='forms_pos_normalised')
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_SIGNS_embed_csv_PATH, out_meta_csv=ORACC_SIGNS_meta_csv_PATH, mode='signs', chunk_size=25, stride=10)
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_SIGNS_NORMALISED_embed_csv_PATH, out_meta_csv=ORACC_SIGNS_NORMALISED_meta_csv_PATH, mode='signs_normalised', chunk_size=25, stride=10)
+    export_corpus_to_csv(corpus=oracc_corpus, out_embed_csv=ORACC_SIGNSGDL_embed_csv_PATH, out_meta_csv=ORACC_SIGNSGDL_meta_csv_PATH, mode='signs_gdl', chunk_size=25, stride=10)
+    
+    print('Chunking was finished.')
+
+    print('')
+
+    print('Embedding chunks... this make take a lot of time (hours) ...')
+    
+    for mode in ['normalised', 'normalised_POS', 'lemma', 'lemma_POS', 'forms', 'forms_normalised', 'forms_POS', 'forms_POS_normalised', 'signs', 'signs_normalised', 'signs_gdl']:
         for model in ['e5', 'MiniLM']:
             paths = select_paths(mode=mode, model=model)
 
@@ -251,3 +402,15 @@ if __name__ == "__main__":
             
             else:
                 print("Unknown model:", model)
+
+    print("All chunks were embedded.")
+
+    print('')
+
+    print('Making the FAISS index...')
+
+    for mode in ['normalised', 'normalised_pos', 'lemma', 'lemma_pos', 'forms', 'forms_pos', 'forms_normalised', 'forms_pos_normalised', 'signs', 'signs_normalised', 'signs_gdl']:
+        for model in ['vect_e5', 'vect_MiniLM']:
+            paths = select_paths(mode=mode, model=model)
+
+            make_FAISS(input_embeddings_path=paths[1], output_faiss_path=paths[3])
