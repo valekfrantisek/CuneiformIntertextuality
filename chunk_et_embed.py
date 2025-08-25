@@ -276,7 +276,7 @@ def process_chunks(input_csv_path:str, output_embeddings_path:str, output_ids_pa
     device = _resolve_device(device)
 
     if batch_size is None:
-        batch_size = 1024 if device == 'cuda' else 128
+        batch_size = 4096 if device == 'cuda' else 128
 
     df = pd.read_csv(input_csv_path)
     ids = df['chunk_id'].astype(str).tolist()
