@@ -26,6 +26,9 @@ description TBD
 ### "Semantic" Approach (vector-based comparison)
 description TBD
 
+## Work in Progress
+I am working on creating more functionalities for this script (e.g., more extensive working with named enitites, fine-tuning the vector-based search, working with metadata of texts such as date, provenance, and languages, to enable network analyses...)
+
 ## License
 The script may be used freely, under the license [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
 
