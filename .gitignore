@@ -5,3 +5,4 @@ CORPUS/
 chunks/
 flourishdata/
 .venv/
+backend/__pycache__/
