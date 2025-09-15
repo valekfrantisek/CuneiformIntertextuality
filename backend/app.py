@@ -1,8 +1,5 @@
 from intertextulity_package import load_json_corpus, OraccCorpus, find_intertextualities_of_text, search_for_query_in_target_dataset, render_results_to_html, render_vector_results_to_html, search_vectors, normalize_signs, render_results_to_html_text_id
 
-from monitor import start_resource_logger
-import atexit
-
 from flask import Flask, request, jsonify, send_from_directory, Response, redirect
 from flask_cors import CORS
 import os
@@ -36,16 +33,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 """ Loading ORACC corpus ---------------------------------------------- """
 
-# NOTE: start logging performance
-# stop_logger = start_resource_logger(interval=3.0)
-
 print("Loading ORACC corpus... please, wait, it may take a while.")
 start_ = time()
 oracc_corpus = OraccCorpus(projects_path=CORPUS_PATH, files_prefix='prnd_no_comp')  # loading pruned corpus
 end_ = time()
 print(f"ORACC corpus loaded in {end_ - start_:.2f} seconds.")
-
-# atexit.register(lambda: stop_logger.set())
 
 
 """ DEFINING FLASK APP ------------------------------------------------ """

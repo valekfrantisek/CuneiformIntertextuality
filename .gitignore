@@ -6,3 +6,8 @@ chunks/
 flourishdata/
 .venv/
 backend/__pycache__/
+.vscode/
+.dockerignore
+compose.debug.yaml
+compose.yaml
+Dockerfile
