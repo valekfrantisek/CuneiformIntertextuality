@@ -19,3 +19,4 @@ frontend/nginx.conf
 backend/Dockerfile
 backend/.dockerignore
 backend/requirements.txt
+dh-frontend_latest.tar
