@@ -12,3 +12,9 @@ backend/__pycache__/
 compose.debug.yaml
 compose.yaml
 Dockerfile
+docker-compose.yaml
+docker-compose copy.yaml
+frontend/nginx_bckp.conf
+frontend/nginx.conf
+backend/Dockerfile
+backend/.dockerignore
