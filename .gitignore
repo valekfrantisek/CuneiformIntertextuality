@@ -18,3 +18,4 @@ frontend/nginx_bckp.conf
 frontend/nginx.conf
 backend/Dockerfile
 backend/.dockerignore
+backend/requirements.txt
