@@ -4,6 +4,7 @@ projectsdata/
 CORPUS/
 chunks/
 flourishdata/
+test/
 .venv/
 backend/__pycache__/
 .vscode/

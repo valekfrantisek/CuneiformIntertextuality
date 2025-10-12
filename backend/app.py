@@ -11,6 +11,7 @@ from cachelib import SimpleCache
 import json
 from time import time
 import math
+from pathlib import Path
 
 
 __version__ = 'BETA_0.0.1'
@@ -25,9 +26,11 @@ __license_oracc_data__ = 'CC BY-SA 3.0' # see http://oracc.ub.uni-muenchen.de/do
 - Add support for signs interchangeability (normalisation of signs; on level of signs, on level of "normalised" mode)
 """
 
-ROOT_PATH = os.getcwd()
-PROJECTS_DATA_PATH = os.path.join(ROOT_PATH, 'projectsdata')
-CORPUS_PATH = os.path.join(ROOT_PATH, 'CORPUS')
+# ROOT_PATH = os.getcwd()
+
+DATA_ROOT = Path(os.environ.get("DATA_ROOT", "/data"))
+PROJECTS_DATA_PATH = os.path.join(DATA_ROOT, 'projectsdata')
+CORPUS_PATH = os.path.join(DATA_ROOT, 'CORPUS')
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -47,15 +50,19 @@ CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
 
 cache = SimpleCache()
 
-@app.route('/')
-def serve_frontend():
-    return send_from_directory(app.static_folder, 'index.html')
+# @app.route('/')
+# def serve_frontend():
+#     return send_from_directory(app.static_folder, 'index.html')
+
+@app.get("/api/healthz")
+def health():
+    return {"ok": True}
 
 
 """ Working with corpus ---------------------------------- """
 
 
-@app.route('/get_text_example/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
+@app.route('/api/get_text_example/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
 def get_text_example(text_id, mode, normalise_signs):
     """ Retrieve the text example from the corpus using the text_id. """
     text_id = text_id.strip()
@@ -81,7 +88,7 @@ def get_text_example(text_id, mode, normalise_signs):
         return jsonify({'error': 'Text example not found (possibly a wrong ID or not selected mode)'}), 404
     
 
-@app.route('/get_text_example_full/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
+@app.route('/api/get_text_example_full/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
 def get_text_example_full(text_id, mode, normalise_signs):
     """ Retrieve the full text example from the corpus using the text_id. """
     text_id = text_id.strip()
@@ -110,7 +117,7 @@ def get_text_example_full(text_id, mode, normalise_signs):
 """ ANALYSIS SECTION -------------------------------------------------- """
 
 
-@app.route('/analyse_input/<mode>/<processing>/<max_total_ed>/<query>/<normalise_signs>', methods=['POST'])
+@app.route('/api/analyse_input/<mode>/<processing>/<max_total_ed>/<query>/<normalise_signs>', methods=['POST'])
 def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
     """ Call the appropriate function based on the mode and processing type. """
     max_total_ed = int(max_total_ed)
@@ -165,7 +172,7 @@ def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
 
 
 # TODO: analyse whole text by ID
-@app.route('/analyse_text_by_id/<text_id>/<mode>/<processing>/<max_total_ed>/<normalise_signs>/<window_len>/<stride>/<ignore_self>/<ignore_core_project>', methods=['POST'])
+@app.route('/api/analyse_text_by_id/<text_id>/<mode>/<processing>/<max_total_ed>/<normalise_signs>/<window_len>/<stride>/<ignore_self>/<ignore_core_project>', methods=['POST'])
 def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs, window_len, stride, ignore_self, ignore_core_project):
 
     # Call the appropriate function based on the mode and processing type
@@ -233,7 +240,7 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
 """ DOWNLOAD FUNCTIONS ------------------------------------------------ """
 
 
-@app.route('/download_csv/<filename>', methods=['GET'])
+@app.route('/api/download_csv/<filename>', methods=['GET'])
 def download_csv(filename):
     df = cache.get(filename)
     if df is None:
@@ -248,7 +255,7 @@ def download_csv(filename):
     )
     
     
-@app.route('/download_xlsx/<filename>', methods=['GET'])
+@app.route('/api/download_xlsx/<filename>', methods=['GET'])
 def download_xlsx(filename):
     df = cache.get(filename)
     if df is None:
@@ -269,4 +276,5 @@ def download_xlsx(filename):
     )
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    # app.run(debug=True, use_reloader=False)
+    app.run()
