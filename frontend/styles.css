@@ -453,7 +453,7 @@ tr:hover {
 /* Footer styling */
 .container-footer {
     width: 1500px;
-    max-height: 60px;
+    max-height: auto;
     max-width: 100%;
     margin: 0 auto;
     gap: 10px;
@@ -468,7 +468,6 @@ tr:hover {
     justify-content: space-between;
     align-items: center;
     margin: 0 auto;
-    /* padding: 0 20px; */
 }
 
 .footer-left, .footer-center, .footer-right {
@@ -493,6 +492,10 @@ tr:hover {
     font-weight: bold;
     color: black;
     text-decoration: none;
+}
+
+.footer-content a:hover {
+    color: #2980b9;
 }
 
 /* Responsive design */

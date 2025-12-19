@@ -8,15 +8,4 @@ test/
 .venv/
 backend/__pycache__/
 .vscode/
-.dockerignore
-compose.debug.yaml
-compose.yaml
-Dockerfile
-docker-compose.yaml
-docker-compose copy.yaml
-frontend/nginx_bckp.conf
-frontend/nginx.conf
-backend/Dockerfile
-backend/.dockerignore
-backend/requirements.txt
-dh-frontend_latest.tar
+chunks.zip
