@@ -23,10 +23,22 @@ Functionalities for intertextality detection are in [intertextulity_package.py](
 
 ## Intertextuality Modes
 ### Simple Approach (string comparison)
-description TBD
+The simple approach is based on string comparisons. Reflecting the peculiarities of the cuneiform writing system, the system can work with several modes. Below, you can see examples of how the same cuneiform text can look like represented in different modes:
+1) **Normalised**: *Zimrī-Lîm rīm tuqumtim lunaʾʾid*
+2) **Lemma**: *Zimrī-Lîm rīmu tuqumtu nâdu*
+3) **Forms**: *zi-im-ri-lim ri-im tu-qu₂-um-tim lu-na-i-id*
+4) **Normalised with POS (part of speech) tagging for NE (named entities)**: *PN_RN rīm tuqumtim lunaʾʾid*
+5) **Lemma with POS tagging for NE**: *PN_RN rīmu tuqumtu nâdu*
+6) **Forms with POS tagging for NE**: *PN_RN ri-im tu-qu₂-um-tim lu-na-i-id*
+7) **Signs**: *zi im ri lim ri im tu qu₂ um tim lu na i id*
+8) **Signs (ground forms)**: *ZI IM RI IGI RI IM TU KU UM DIM LU NA I A₂*
+
+On the level of intertextuality processing you can then select edit distance tolerance, either on the level of individual tokens (i.e., words or signs) or characters within them. For example, edit distance on the level of tokens between *Zimrī-Lîm rīm tuqumtim* and *Šamšī-Addu rīm tuqumtim* is 1, but the edit distance on the level of characters within tokens is 7.
+
+Each of these setting is suitable for different purposes and the usesrs are invited to experiment.
 
 ### "Semantic" Approach (vector-based comparison)
-description TBD
+The "semantic" (or better: vector-based) approach is an attempt to focus on intertextuality beyond the level of direct intertextualities. This option is for now available only whn the app is run locally. Using two types of vector embeding (infloat/e5-base-v2 and all-MiniLM-L6-v2) returns interesting results, however, proper improvement is needed. Those who are interested in this comparison are invited to explore the script and experiment with it. More detailed description of the current state is TBD.
 
 ## Work in Progress
 I am working on creating more functionalities for this script (e.g., more extensive working with named enitites, fine-tuning the vector-based search, working with metadata of texts such as date, provenance, and languages, to enable network analyses...)

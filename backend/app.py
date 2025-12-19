@@ -48,8 +48,9 @@ print(f"ORACC corpus loaded in {end_ - start_:.2f} seconds.")
 app = Flask(__name__, static_folder='../frontend')
 CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
 
-cache = SimpleCache(treshold=64)
+cache = SimpleCache(threshold=64)
 CACHE_TIMEOUT = 3600  # seconds
+app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 # @app.route('/')
 # def serve_frontend():

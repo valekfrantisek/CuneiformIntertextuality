@@ -320,4 +320,4 @@ if __name__ == '__main__':
 
     print('')
 
-    print('If you want to perform search with vector comparison, use the "chunk_et_embed.py" script.')
+    print('If you want to perform search with vector comparison, use the "chunk_et_embed.py" script. Or, you can download the precomputed chunks from the link below:')
