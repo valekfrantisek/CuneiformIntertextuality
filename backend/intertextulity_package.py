@@ -4,7 +4,7 @@ import joblib
 from tqdm import tqdm
 from typing import List, Tuple, Optional, Dict, Any, Set, Iterable
 from rapidfuzz.distance import Levenshtein
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from dataclasses import dataclass
 from math import ceil
 import sys
@@ -20,7 +20,7 @@ import torch
 import time
 
 
-__version__ = 'BETA_0.0.1'
+__version__ = '1.0.0'
 __author__ = 'František Válek'
 __license_software__ = 'CC0 1.0 Universal'
 __license_oracc_data__ = 'CC BY-SA 3.0' # see http://oracc.ub.uni-muenchen.de/doc/about/licensing/index.html; for individual datasets further authors are relevant (links are included for reference to dataset)
@@ -44,6 +44,25 @@ CORPUS_PATH = os.path.join(ROOT_PATH, 'CORPUS')
 
 # NOTE: in case of POS variants, we want to ignore named entities/Proper Nouns. (see https://oracc.museum.upenn.edu/doc/help/languages/propernouns/index.html)
 PN_POSs = ['AN', 'CN', 'DN', 'EN', 'FN', 'GN', 'LN', 'MN', 'ON', 'PN', 'QN', 'RN', 'SN', 'TN', 'WN', 'YN']
+
+_MODE_CACHE = OrderedDict()  # key: (id(corpus), mode) -> (idx, stop)
+_MODE_CACHE_MAX = 4  # maximum number of cached items
+
+def get_mode_data_cached(mode: str, corpus):
+    key = (id(corpus), mode)
+    if key in _MODE_CACHE:
+        _MODE_CACHE.move_to_end(key)
+        return _MODE_CACHE[key]
+
+    value = load_data_by_mode(mode, corpus)  # (idx, stop)
+    _MODE_CACHE[key] = value
+    _MODE_CACHE.move_to_end(key)
+
+    # LRU eviction
+    while len(_MODE_CACHE) > _MODE_CACHE_MAX:
+        _MODE_CACHE.popitem(last=False)
+
+    return value
 
 def load_json_corpus(json_corpus_name:str, load_path=CORPUS_PATH) -> dict:
     return joblib.load(os.path.join(load_path, f'{json_corpus_name}.joblib'))
@@ -637,7 +656,7 @@ def load_data_by_mode(mode:str, oracc_corpus: OraccCorpus):
         forms_inverted_index = build_inverted_index(oracc_corpus.forms_normalised_corpus, oracc_corpus.texts)
         forms_stops = set(['■', 'ina', 'ana', 'u', 'ša', 'i-na', 'a-na'])
         return forms_inverted_index, forms_stops
-    elif mode == 'forms_pos':
+    elif mode == 'forms_pos_normalised':
         forms_pos_inverted_index = build_inverted_index(oracc_corpus.forms_pos_normalised_corpus, oracc_corpus.texts)
         forms_pos_stops = set(['■', 'ina', 'ana', 'u', 'ša', 'i-na', 'a-na'])
         return forms_pos_inverted_index, forms_pos_stops
@@ -671,8 +690,8 @@ def search_for_query_in_target_dataset(mode: str, processing:str, query: List[st
 
     benchmark = set_correct_benchmark(query=query, max_total_ed=max_total_ed, mode=processing)
 
-    if not target_inverted_idx or not stop:
-        target_inverted_idx, stop = load_data_by_mode(mode, ORACCtarget_dataset)
+    if target_inverted_idx is None or stop is None:
+        target_inverted_idx, stop = get_mode_data_cached(mode, ORACCtarget_dataset)
     
     selected_documents = select_documents_for_tokens(target_inverted_idx, query, stop=stop, benchmark=benchmark)
 
@@ -781,7 +800,7 @@ def find_intertextualities_of_text(oracc_corpus:OraccCorpus, text_id:str, window
     queries = parse_query_text(oracc_corpus.get_data_by_id(text_id, mode=mode), window_size=window_size, stride=stride)
     print(f'Input text has been parsed to {len(queries)} queries.')
 
-    target_inverted_idx, stop = load_data_by_mode(mode, oracc_corpus)
+    target_inverted_idx, stop = get_mode_data_cached(mode, oracc_corpus)
 
     ignore_texts = []
     if ignore_itself:

@@ -14,7 +14,7 @@ import math
 from pathlib import Path
 
 
-__version__ = 'BETA_0.0.1'
+__version__ = '1.0.0'
 __author__ = 'František Válek'
 __license_software__ = 'CC0 1.0 Universal'
 __license_oracc_data__ = 'CC BY-SA 3.0' # see http://oracc.ub.uni-muenchen.de/doc/about/licensing/index.html; for individual datasets further authors are relevant (links are included for reference to dataset)
@@ -48,7 +48,8 @@ print(f"ORACC corpus loaded in {end_ - start_:.2f} seconds.")
 app = Flask(__name__, static_folder='../frontend')
 CORS(app, resources={r"/*": {"origins": "*", "supports_credentials": True}})
 
-cache = SimpleCache()
+cache = SimpleCache(treshold=64)
+CACHE_TIMEOUT = 3600  # seconds
 
 # @app.route('/')
 # def serve_frontend():
@@ -59,10 +60,10 @@ def health():
     return {"ok": True}
 
 
+""" CUNEIFORM INTERTEXTUALITY ------------------------------------------------------------------- """
 """ Working with corpus ---------------------------------- """
 
-
-@app.route('/api/get_text_example/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
+@app.route('/api/CI/get_text_example/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
 def get_text_example(text_id, mode, normalise_signs):
     """ Retrieve the text example from the corpus using the text_id. """
     text_id = text_id.strip()
@@ -88,7 +89,7 @@ def get_text_example(text_id, mode, normalise_signs):
         return jsonify({'error': 'Text example not found (possibly a wrong ID or not selected mode)'}), 404
     
 
-@app.route('/api/get_text_example_full/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
+@app.route('/api/CI/get_text_example_full/<text_id>/<mode>/<normalise_signs>', methods=['POST'])
 def get_text_example_full(text_id, mode, normalise_signs):
     """ Retrieve the full text example from the corpus using the text_id. """
     text_id = text_id.strip()
@@ -117,7 +118,7 @@ def get_text_example_full(text_id, mode, normalise_signs):
 """ ANALYSIS SECTION -------------------------------------------------- """
 
 
-@app.route('/api/analyse_input/<mode>/<processing>/<max_total_ed>/<query>/<normalise_signs>', methods=['POST'])
+@app.route('/api/CI/analyse_input/<mode>/<processing>/<max_total_ed>/<query>/<normalise_signs>', methods=['POST'])
 def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
     """ Call the appropriate function based on the mode and processing type. """
     max_total_ed = int(max_total_ed)
@@ -151,7 +152,7 @@ def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
         results_html = render_vector_results_to_html(results=results, query=query, mode=mode, processing=processing)
 
         # TODO: implement export to CSV and XLSX (here, the JSON will probably not work as it is a pd df!!!! --> the best may be to make all the results to pd dfs and save csv/xls files to cache right away!)
-        cache.set(f'results_{input_id}', results, timeout=3600)
+        cache.set(f'results_{input_id}', results, timeout=CACHE_TIMEOUT)
         logging.debug(f"Processed data saved to cache with key: results_{input_id}")
 
     elif processing in ['edit_distance_inner', 'edit_distance_tokens']:
@@ -165,14 +166,14 @@ def analyse_input(mode, processing, max_total_ed, query, normalise_signs):
         results_html = render_results_to_html(results=results, query=query, mode=mode, processing=processing, max_total_ed=max_total_ed)
 
         # TODO: implement export to CSV and XLSX
-        cache.set(f'results_{input_id}', results, timeout=3600)
+        cache.set(f'results_{input_id}', results, timeout=CACHE_TIMEOUT)
         logging.debug(f"Processed data saved to cache with key: results_{input_id}")
 
     return jsonify({'input_id': input_id, 'data_for_download':  f'results_{input_id}', 'results_html': results_html})
 
 
 # TODO: analyse whole text by ID
-@app.route('/api/analyse_text_by_id/<text_id>/<mode>/<processing>/<max_total_ed>/<normalise_signs>/<window_len>/<stride>/<ignore_self>/<ignore_core_project>', methods=['POST'])
+@app.route('/api/CI/analyse_text_by_id/<text_id>/<mode>/<processing>/<max_total_ed>/<normalise_signs>/<window_len>/<stride>/<ignore_self>/<ignore_core_project>', methods=['POST'])
 def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs, window_len, stride, ignore_self, ignore_core_project):
 
     # Call the appropriate function based on the mode and processing type
@@ -212,7 +213,7 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
         # results_html = render_vector_results_to_html(results=results, query=text_id, mode=mode, processing=processing)
 
         # # TODO: implement export to CSV and XLSX (here, the JSON will probably not work as it is a pd df!!!! --> the best may be to make all the results to pd dfs and save csv/xls files to cache right away!)
-        # cache.set(f'results_{input_id}', results, timeout=3600)
+        # cache.set(f'results_{input_id}', results, timeout=CACHE_TIMEOUT)
         # logging.debug(f"Processed data saved to cache with key: results_{input_id}")
 
     elif processing in ['edit_distance_inner', 'edit_distance_tokens']:
@@ -231,7 +232,7 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
 
         results_html = render_results_to_html_text_id(results=results, text_id=text_id, mode=mode, processing=processing, ignore_self=ignore_self, ignore_core_project=ignore_core_project)
 
-        cache.set(f'results_{input_id}', results, timeout=3600)
+        cache.set(f'results_{input_id}', results, timeout=CACHE_TIMEOUT)
         logging.debug(f"Processed data saved to cache with key: results_{input_id}")
 
     return jsonify({'input_id': input_id, 'data_for_download':  f'results_{input_id}', 'results_html': results_html})
@@ -240,7 +241,7 @@ def analyse_text_by_id(text_id, mode, processing, max_total_ed, normalise_signs,
 """ DOWNLOAD FUNCTIONS ------------------------------------------------ """
 
 
-@app.route('/api/download_csv/<filename>', methods=['GET'])
+@app.route('/api/CI/download_csv/<filename>', methods=['GET'])
 def download_csv(filename):
     df = cache.get(filename)
     if df is None:
@@ -255,7 +256,7 @@ def download_csv(filename):
     )
     
     
-@app.route('/api/download_xlsx/<filename>', methods=['GET'])
+@app.route('/api/CI/download_xlsx/<filename>', methods=['GET'])
 def download_xlsx(filename):
     df = cache.get(filename)
     if df is None:
