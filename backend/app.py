@@ -26,9 +26,9 @@ __license_oracc_data__ = 'CC BY-SA 3.0' # see http://oracc.ub.uni-muenchen.de/do
 - Add support for signs interchangeability (normalisation of signs; on level of signs, on level of "normalised" mode)
 """
 
-# ROOT_PATH = os.getcwd()
+DATA_ROOT = os.getcwd()
 
-DATA_ROOT = Path(os.environ.get("DATA_ROOT", "/data"))
+# DATA_ROOT = Path(os.environ.get("DATA_ROOT", "/data"))
 PROJECTS_DATA_PATH = os.path.join(DATA_ROOT, 'projectsdata')
 CORPUS_PATH = os.path.join(DATA_ROOT, 'CORPUS')
 
