@@ -16,6 +16,8 @@ The data in the repository do not include the ORACC corpus and trained models fo
 
 To perform vectorised searches, you need to run [chunk_et_embed.py](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/chunk_et_embed.py). Running this script requieres cuda and a lot of time (depending on your device). It is prepared to run on GPU with extensive use of RAM. If you run it on CPU and have RAM below  16 GB, try to do some fine tuning (esp. lowering batch_size parametrs)
 
+Alternatively, you can download the [preprocessed data](https:/digitalhumanities.upce.cz/downloads/chunks.zip) and extract them to directory /chunks.
+
 ### Runing the application
 Functionalities for intertextality detection are in [intertextulity_package.py](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/backend/intertextulity_package.py) in the [backend directory](https://github.com/valekfrantisek/CuneiformIntertextuality/tree/main/backend). These functions can be run via a web-like application that communicates with the backend through [flask app](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/backend/app.py). You can run the frontend locally [HTML](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/frontend/index.html), e.g., using VS Code [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer). Then, run the [flask app](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/backend/app.py) and once the corpus is loaded, you may start your queries.
 
