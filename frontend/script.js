@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function getSelectedMode() {
         const el = document.querySelector('.mode-option.selected');
-        return el ? (el.dataset.mode || 'normalized') : 'normalized';
+        return el ? (el.dataset.mode || 'normalised') : 'normalised';
     }
 
     function getSelectedProcessing() {

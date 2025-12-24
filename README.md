@@ -40,7 +40,8 @@ Each of these setting is suitable for different purposes and the usesrs are invi
 ### "Semantic" Approach (vector-based comparison)
 The "semantic" (or better: vector-based) approach is an attempt to focus on intertextuality beyond the level of direct intertextualities. This option is for now available only whn the app is run locally. Using two types of vector embeding (infloat/e5-base-v2 and all-MiniLM-L6-v2) returns interesting results, however, proper improvement is needed. Those who are interested in this comparison are invited to explore the script and experiment with it. More detailed description of the current state is TBD.
 
-### 
+### Search for Selected ORACC Text Intertextualities
+The script also provides functionalities to run intertextuality detection for a wjole selected ORACC text. In this case, in the web UI, you can select the window length (number of tokens that is run as a query for intertextuality detection) and stride (an overlap of the windows). The mode for query search is done according to the setting set in the section "general setting" within UI.
 
 ## Work in Progress
 I am working on creating more functionalities for this script (e.g., more extensive working with named enitites, fine-tuning the vector-based search, working with metadata of texts such as date, provenance, and languages, to enable network analyses...). These functionalities can analyse, e.g., [with which other deities a selected deity appears in texts](https://public.flourish.studio/visualisation/24813987/).

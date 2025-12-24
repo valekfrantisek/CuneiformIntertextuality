@@ -32,7 +32,7 @@
                 <!-- TODO: add description!!! -->
                 <div class="button-container" id="mode-buttons">
                     <div class="mode-group">
-                        <button type="radio" class="mode-option" id="modebutton" data-mode="normalised">
+                        <button type="radio" class="mode-option selected" id="modebutton" data-mode="normalised">
                             <span>Normalised</span>
                         </button>
                         <button type="radio" class="mode-option" id="modebutton" data-mode="lemma">
@@ -67,7 +67,7 @@
 
                 <div class="button-container" id="mode-buttons">
                     <div class="mode-group">
-                        <button type="radio" class="processing-option" id="processing-button" data-processing="edit_distance_inner">
+                        <button type="radio" class="processing-option selected" id="processing-button" data-processing="edit_distance_inner">
                             <span>Edit distance<br>(chars within tokens)</span>
                         </button>
                         <button type="radio" class="processing-option" id="processing-button" data-processing="edit_distance_tokens">
@@ -170,6 +170,8 @@
                 </div>
 
                 <h3>2) Find intertextualities of a text from ORACC within the ORACC corpus</h3>
+
+                <p>The settings from above are applied here.</p>
 
                 <form method="POST">
                     <div class="combo" id="project-combo" aria-haspopup="listbox">
