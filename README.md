@@ -4,7 +4,9 @@ This project includes scripts that allow to run intertextuality queries over the
 ## How to use
 The Cuneiform Intertextuality detection is intended to run as an accessible web application. So far, it is not being run anywhere, but hopefully this will happen soon.
 
-## How to use - locally
+## How to use
+This script is available through a web UI, run at [digitalhumanities.upce.cz/CuneiformIntertextuality](https://digitalhumanities.upce.cz/CuneiformIntertextuality/) or locally, by using the scripts provided here. Some functions are available on when run locally.
+
 ### Requirements
 Python packages
 - Install requirements from the [requirements.txt](https://github.com/valekfrantisek/CuneiformIntertextuality/blob/main/requirements.txt).
